@@ -1,0 +1,78 @@
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Test;
+import org.springframework.util.CollectionUtils;
+
+class MemberCoverageEntityTest {
+
+    @Test
+    void testApplyGroupfilterCoverageEntities_UncoveredLine() {
+        // Arrange
+        List<MemberCoverageEntity> memberCoverageEntities = new ArrayList<>();
+        MemberCoverageEntity entity = new MemberCoverageEntity();
+        entity.setGroupId("Group1");
+
+        MemberCoverageDetails details = new MemberCoverageDetails();
+        List<MemberCoverage> coverages = new ArrayList<>();
+        MemberCoverage coverage1 = new MemberCoverage();
+        coverage1.setStartDate(LocalDate.of(2023, 1, 1));
+        coverage1.setEndDate(LocalDate.of(2023, 12, 31));
+        coverages.add(coverage1);
+        details.setMemberCoverages(coverages);
+
+        entity.setMemberDetails(details);
+        memberCoverageEntities.add(entity);
+
+        List<GroupFilter> groupFilters = new ArrayList<>();
+        GroupFilter groupFilter = new GroupFilter();
+        groupFilter.setGroupId("Group1");
+        groupFilter.setGroupAssoicationStartDate("2023-01-01");
+        groupFilter.setGroupAssoicationEndDate("2023-12-31");
+        groupFilters.add(groupFilter);
+
+        // Act
+        List<MemberCoverageEntity> result = MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+
+        // Assert
+        assertEquals(1, result.size(), "Result should contain one entity");
+        assertNotNull(result.get(0).getMemberDetails(), "Member details should not be null");
+        assertNotNull(result.get(0).getMemberDetails().getMemberCoverages(), "Member coverages should not be null");
+        assertEquals(1, result.get(0).getMemberDetails().getMemberCoverages().size(), "Filtered coverages should match the date range");
+    }
+
+    @Test
+    void testApplyGroupfilterCoverageEntities_MemberDetailsNullCoverages() {
+        // Arrange
+        List<MemberCoverageEntity> memberCoverageEntities = new ArrayList<>();
+        MemberCoverageEntity entity = new MemberCoverageEntity();
+        entity.setGroupId("Group1");
+
+        MemberCoverageDetails details = new MemberCoverageDetails();
+        details.setMemberCoverages(null); // No coverages provided
+        entity.setMemberDetails(details);
+        memberCoverageEntities.add(entity);
+
+        List<GroupFilter> groupFilters = new ArrayList<>();
+        GroupFilter groupFilter = new GroupFilter();
+        groupFilter.setGroupId("Group1");
+        groupFilter.setGroupAssoicationStartDate("2023-01-01");
+        groupFilter.setGroupAssoicationEndDate("2023-12-31");
+        groupFilters.add(groupFilter);
+
+        // Act
+        List<MemberCoverageEntity> result = MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+
+        // Assert
+        assertEquals(1, result.size(), "Result should contain one entity");
+        assertNotNull(result.get(0).getMemberDetails(), "Member details should not be null");
+        assertNull(result.get(0).getMemberDetails().getMemberCoverages(), "Member coverages should remain null");
+    }
+}
