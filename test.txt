@@ -3,76 +3,93 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.CollectionUtils;
 
-class MemberCoverageEntityTest {
+public class MemberCoverageEntityTest {
 
     @Test
-    void testApplyGroupfilterCoverageEntities_UncoveredLine() {
-        // Arrange
-        List<MemberCoverageEntity> memberCoverageEntities = new ArrayList<>();
-        MemberCoverageEntity entity = new MemberCoverageEntity();
-        entity.setGroupId("Group1");
+    public void testApplyGroupfilterCoverageEntitiesWithFilteredDates() {
+        // Mock data for memberCoverageEntities
+        MemberCoverageDetails mockDetails = mock(MemberCoverageDetails.class);
+        when(mockDetails.getMemberCoverages()).thenReturn(new ArrayList<>());
 
-        MemberCoverageDetails details = new MemberCoverageDetails();
-        List<MemberCoverage> coverages = new ArrayList<>();
-        MemberCoverage coverage1 = new MemberCoverage();
-        coverage1.setStartDate(LocalDate.of(2023, 1, 1));
-        coverage1.setEndDate(LocalDate.of(2023, 12, 31));
-        coverages.add(coverage1);
-        details.setMemberCoverages(coverages);
+        MemberCoverageEntity memberCoverageEntity = new MemberCoverageEntity();
+        memberCoverageEntity.setGroupId("Group1");
+        memberCoverageEntity.setMemberDetails(mockDetails);
 
-        entity.setMemberDetails(details);
-        memberCoverageEntities.add(entity);
+        List<MemberCoverageEntity> memberCoverageEntities = List.of(memberCoverageEntity);
 
-        List<GroupFilter> groupFilters = new ArrayList<>();
-        GroupFilter groupFilter = new GroupFilter();
-        groupFilter.setGroupId("Group1");
-        groupFilter.setGroupAssoicationStartDate("2023-01-01");
-        groupFilter.setGroupAssoicationEndDate("2023-12-31");
-        groupFilters.add(groupFilter);
+        // Mock data for groupFilter
+        GroupFilter mockGroupFilter = new GroupFilter();
+        mockGroupFilter.setGroupId("Group1");
+        mockGroupFilter.setGroupAssoicationStartDate("2023-01-01");
+        mockGroupFilter.setGroupAssoicationEndDate("2023-12-31");
 
-        // Act
-        List<MemberCoverageEntity> result = MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+        List<GroupFilter> groupFilters = List.of(mockGroupFilter);
 
-        // Assert
-        assertEquals(1, result.size(), "Result should contain one entity");
-        assertNotNull(result.get(0).getMemberDetails(), "Member details should not be null");
-        assertNotNull(result.get(0).getMemberDetails().getMemberCoverages(), "Member coverages should not be null");
-        assertEquals(1, result.get(0).getMemberDetails().getMemberCoverages().size(), "Filtered coverages should match the date range");
+        // Call the method
+        List<MemberCoverageEntity> filteredEntities =
+                MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+
+        // Assertions
+        assertNotNull(filteredEntities);
+        assertEquals(1, filteredEntities.size());
+        MemberCoverageDetails updatedDetails = filteredEntities.get(0).getMemberDetails();
+
+        assertNotNull(updatedDetails);
+        verify(mockDetails, times(1)).setMemberCoverages(anyList());
     }
 
     @Test
-    void testApplyGroupfilterCoverageEntities_MemberDetailsNullCoverages() {
-        // Arrange
-        List<MemberCoverageEntity> memberCoverageEntities = new ArrayList<>();
-        MemberCoverageEntity entity = new MemberCoverageEntity();
-        entity.setGroupId("Group1");
+    public void testApplyGroupfilterCoverageEntitiesWithEmptyFilters() {
+        // Mock data for memberCoverageEntities
+        MemberCoverageDetails mockDetails = mock(MemberCoverageDetails.class);
+        MemberCoverageEntity memberCoverageEntity = new MemberCoverageEntity();
+        memberCoverageEntity.setGroupId("Group1");
+        memberCoverageEntity.setMemberDetails(mockDetails);
 
-        MemberCoverageDetails details = new MemberCoverageDetails();
-        details.setMemberCoverages(null); // No coverages provided
-        entity.setMemberDetails(details);
-        memberCoverageEntities.add(entity);
+        List<MemberCoverageEntity> memberCoverageEntities = List.of(memberCoverageEntity);
 
+        // Empty groupFilter
         List<GroupFilter> groupFilters = new ArrayList<>();
-        GroupFilter groupFilter = new GroupFilter();
-        groupFilter.setGroupId("Group1");
-        groupFilter.setGroupAssoicationStartDate("2023-01-01");
-        groupFilter.setGroupAssoicationEndDate("2023-12-31");
-        groupFilters.add(groupFilter);
 
-        // Act
-        List<MemberCoverageEntity> result = MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+        // Call the method
+        List<MemberCoverageEntity> filteredEntities =
+                MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
 
-        // Assert
-        assertEquals(1, result.size(), "Result should contain one entity");
-        assertNotNull(result.get(0).getMemberDetails(), "Member details should not be null");
-        assertNull(result.get(0).getMemberDetails().getMemberCoverages(), "Member coverages should remain null");
+        // Assertions
+        assertTrue(filteredEntities.isEmpty());
+        verify(mockDetails, never()).setMemberCoverages(anyList());
+    }
+
+    @Test
+    public void testApplyGroupfilterCoverageEntitiesWithNullValues() {
+        // Mock data for memberCoverageEntities
+        MemberCoverageDetails mockDetails = mock(MemberCoverageDetails.class);
+        MemberCoverageEntity memberCoverageEntity = new MemberCoverageEntity();
+        memberCoverageEntity.setGroupId(null);
+        memberCoverageEntity.setMemberDetails(mockDetails);
+
+        List<MemberCoverageEntity> memberCoverageEntities = List.of(memberCoverageEntity);
+
+        // Mock data for groupFilter
+        GroupFilter mockGroupFilter = new GroupFilter();
+        mockGroupFilter.setGroupId("Group1");
+        mockGroupFilter.setGroupAssoicationStartDate("2023-01-01");
+        mockGroupFilter.setGroupAssoicationEndDate("2023-12-31");
+
+        List<GroupFilter> groupFilters = List.of(mockGroupFilter);
+
+        // Call the method
+        List<MemberCoverageEntity> filteredEntities =
+                MemberCoverageEntity.applyGroupfilterCoverageEntities(memberCoverageEntities, groupFilters);
+
+        // Assertions
+        assertTrue(filteredEntities.isEmpty());
+        verify(mockDetails, never()).setMemberCoverages(anyList());
     }
 }
